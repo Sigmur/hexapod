@@ -92,7 +92,7 @@ sudo raspi-config<br>
  -> Enable "I2C"<br>
 </code>
 
-Then install the library<br>
+Then install the PCA9685 library<br>
 <code>
 cd<br>
 git clone https://github.com/Reinbert/pca9685.git<br>
@@ -100,23 +100,10 @@ cd pca9685/src
 sudo make install
 </code>
 
-https://github.com/barulicm/PiPCA9685
-
-
-Then install library<br>
-<code>
-cd<br>
-git clone https://github.com/barulicm/PiPCA9685.git<br>
-cd PiPCA9685<br>
-xargs -a apt_dependencies.txt sudo apt-get install -y<br>
-sudo cmake --workflow --preset install
-</code>
-
 ## 5) Project setup
 
 ### 5.1) Cloning the repo
-Assuming this repository will be cloned in `/home/youruser`, so `/home/youruser/hexapod`
-
+Assuming this repository will be cloned in `/home/youruser`, so `/home/youruser/hexapod`<br>
 <code>
 cd<br>
 git clone https://github.com/Sigmur/hexapod.git
@@ -125,4 +112,5 @@ git clone https://github.com/Sigmur/hexapod.git
 ### 5.2) Building the program
 
 ***WIP***<br>
-just run `./build.sh`, it does stuff
+In the project directory just run `make` to build using the included Makefile.<br>
+The resulting executable will be in a `bin` folder created by the Makefile. `./bin/hexapod` to run it.
