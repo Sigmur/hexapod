@@ -5,14 +5,32 @@
 #include "defines.h"
 #include "utils.h"
 
-void Joint::init()
+bool Joint::init()
 {
     // Move to home angle
-    moveJoint();
+    updateServoPosition();
+
+    return true;
 }
 
+/**
+ * @TODO
+ * Update called in the main loop
+ */
 void Joint::update()
 {
+}
+
+/**
+ * Update the PWM sent to the servo
+ */
+void Joint::updateServoPosition()
+{
+    // 1) Transform angle into PWM duty cycle
+    duty_cycle = (int)Utils::mapFloat(angle, 0, 180, MIN_DUTY, MAX_DUTY);
+
+    // 2) Send to PCA9685
+    pwmWrite(pin, duty_cycle);
 }
 
 // -----
@@ -23,7 +41,7 @@ void Joint::setAngle(float _angle, bool move)
     angle = _angle;
 
     if (move) // Update servo position if called for
-        moveJoint();
+        updateServoPosition();
 }
 
 void Joint::setHome(float angle)
@@ -56,15 +74,6 @@ void Joint::setPin(int _pin)
 }
 
 // -----
-
-void Joint::moveJoint()
-{
-    // 1) Transform angle into PWM duty cycle
-    duty_cycle = (int)Utils::mapFloat(angle, 0, 180, MIN_DUTY, MAX_DUTY);
-
-    // 2) Send to PCA9685
-    pwmWrite(pin, duty_cycle);
-}
 
 bool Joint::isValidAngle(float _angle)
 {

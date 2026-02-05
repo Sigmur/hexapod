@@ -40,9 +40,35 @@ Then, run the thing  :
   - **Raspberry Pi Connect** : Raspberry's remote connection stuff, i use regular SSH so i won't bother with that.
 - **The rest is just writing and validating the image**<br>
 
-### Orange Pi :<br>
+### Orange Pi - Dietpi :<br>
 http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero_2W#Download_the_development_board_image_and_related_information<br>
-**Todo when it arrives in the mail**
+
+I used dietpi, i wanted a very light image with no GUI<br>
+Flashed the SD card using Balena Etcher<br>
+After flashing, a new folder will be available, edit the various config files to add wifi access<br>
+In dietpi.txt : <br>
+```
+AUTO_SETUP_NET_ETHERNET_ENABLED=0
+AUTO_SETUP_NET_WIFI_ENABLED=1
+AUTO_SETUP_NET_HOSTNAME=Sigpod
+CONFIG_SERIAL_CONSOLE_ENABLE=0
+```
+In dietpiEnv.txt : `overlays=i2c0`<br>
+in dietpi-wifi.txt : fill your wifi infos in these fields<br>
+```
+aWIFI_SSID[0]
+aWIFI_KEY[0]
+```
+
+YOU'LL NEED A KEYBOARD AND SCREEN TO FINISH THE SETUP<br>
+At one point you can select software to be installed, look in the list and add WiringPi
+If it asks, disable the Serial UART port, apparently this can conflict with I2C and other stuff in the GPIO
+Last thing, 
+
+### Orange Pi - OrangePi OS (arch)
+sudo pacman -S git
+sudo pacman -S g++
+sudo pacman -S i2c-tools
 
 ## 3) First boot and remote access
 
@@ -66,12 +92,15 @@ Connet to the Pi using SSH
 sudo apt-get update<br>
 sudo apt-get upgrade<br>
 sudo apt-get install git<br>
+sudo apt-get install g++<br>
+sudo apt-get install i2c-tools<br>
 reboot
 </code>
 
 ### 4.2) Libraries :
 
-#### WiringP - GPIO
+#### WiringPi - GPIO
+**For Raspberry pi only**<br>
 https://github.com/WiringPi/WiringPi
 
 <code>
@@ -82,14 +111,55 @@ mv debian-template/*.deb .<br>
 sudo apt install ./wiringpi_*.deb
 </code>
 
+#### WiringOP - GPIO
+**For OrangePi Only**<br>
+https://github.com/Sigmur/wiringOP.git
+
+<code>
+cd<br>
+git clone https://github.com/Sigmur/wiringOP.git
+cd wiringOP
+sudo ./build clean
+sudo ./build
+</code>
+<br>
+I had to fork the base WiringOP from https://github.com/orangepi-xunlong/wiringOP
+There is one little bug the original this implementation : as per the PCE9685 documentation, i init the PCA board on a high pin number : 100, then use `pwmWrite` on 100, 101, etc... one for each of the 12 servo you can drive with these boards.<br>
+Basically the problem is this (@wiringOP/wiringP/wiringP.c:4438) : 
+```c++
+if (pin < MAX_PIN_NUM) {
+    [...]
+} else {
+    printf("not on board :%s,%d\n", __func__, __LINE__);
+    if ((node = wiringPiFindNode(pin)) != NULL) {
+    if (wiringPiDebug)
+        printf("Jim find node%s,%d\n", __func__, __LINE__);
+    node->digitalWrite(node, pin, value);
+}
+```<br>
+ - Each time you call a pin that is outside of the board pin count, it'll prinf `not on board :pwmWrite,4438`, should probably be within a `if (wiringPiDebug)` <br>
+ - Then if it finds a node, it does a `digitalWrite` on the node, should be a `pwmWrite`.
+Since i'm a coward and can't do a pull request on a stranger's repo to save my life, i just fixed the thing in my little safe corner.<br>
+<br>
+No shade on the base library, it's fucking great to have something to work with in the first place.
+
 #### PCA9685 - PWM drivers
 https://github.com/Reinbert/pca9685
 
-First, enable I2C<br>
+Enable I2C<br>
+**raspberry pi**<br>
 <code>
 sudo raspi-config<br>
  -> Select "Interface Options"<br>
  -> Enable "I2C"<br>
+</code>
+**Orange pi**<br>
+<code>
+sudo orangepi-config<br>
+ -> Select "System"<br>
+ -> Select "Hardware"<br>
+ -> Enable "pi-i2c0"<br>
+ -> Enable "pi-i2c1"<br>
 </code>
 
 Then install the PCA9685 library<br>
@@ -99,6 +169,12 @@ git clone https://github.com/Reinbert/pca9685.git<br>
 cd pca9685/src
 sudo make install
 </code>
+
+#### Lib Eigen 3.4
+https://libeigen.gitlab.io/
+
+Used in the kinematics calculations and probably already installed.<br>
+`sudo apt install libeigen3-dev`
 
 ## 5) Project setup
 

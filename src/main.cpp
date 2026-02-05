@@ -3,24 +3,42 @@
 #include <stdlib.h>
 #include <wiringPi.h>
 #include "pca9685.h"
+
+#include <chrono>
+#include <math.h>
+#include "Eigen/Dense"
+#include "quik/geometry.hpp"
+#include "quik/Robot.hpp"
+#include "quik/IKSolver.hpp"
+
 #include "defines.h"
-
-#include "Limb.h"
-
-#define JOINT1_ANGLE 90.0f
-#define JOINT2_ANGLE 125.0f
-#define JOINT3_ANGLE 110.0f
-
-#define LIMB_LENGTH_PART1 38.0
-#define LIMB_LENGTH_PART2 86.25
-#define LIMB_LENGTH_PART3 160.5
+#include "Hexapod.h"
 
 using namespace std;
+using namespace Eigen;
 
 int pca_board_1 = -1;
 int pca_board_2 = -1;
 
-Limb limbs[6];
+// Limb limbs[6];
+/*
+// Define the IK options
+const quik::IKSolver<6> IKS(
+    R, // The robot object (pointer)
+    200, // max number of iterations
+    quik::ALGORITHM_QUIK, // algorithm (ALGORITHM_QUIK, ALGORITHM_NR or ALGORITHM_BFGS)
+    1e-12, // Exit tolerance
+    1e-14, // Minimum step tolerance
+    0.05, // iteration-to-iteration improvement tolerance (0.05 = 5% relative improvement)
+    10, // max consequitive gradient fails
+    80, // Max gradient fails
+    1e-10, // lambda2 (lambda^2, the damping parameter for DQuIK and DNR)
+    0.34, // Max linear error step
+    1 // Max angular error step
+);
+*/
+
+Hexapod hexapod;
 
 int setup()
 {
@@ -33,35 +51,73 @@ int setup()
     pca_board_2 = pca9685Setup(BOARD2_PIN_BASE, 0x41, PCA9685_FREQUENCY);
     if (pca_board_1 < 0)
     {
-        cout << "Error while setting up PCA9685 board 1" << endl;
+        cout << "[ERROR] - Error while setting up PCA9685 board 1" << endl;
         return 1;
     }
     if (pca_board_2 < 0)
     {
-        cout << "Error while setting up PCA9685 board 2" << endl;
+        cout << "[ERROR] - Error while setting up PCA9685 board 2" << endl;
         return 1;
     }
 
     // 1.3) Reset all output
+    cout << "BOARD1 : " << pca_board_1 << endl;
+    cout << "BOARD2 : " << pca_board_2 << endl;
     pca9685PWMReset(pca_board_1);
     pca9685PWMReset(pca_board_2);
 
-    // 2) ---- Legs ----
-    // 2.1) Setup joints
-    for (int i = 0; i < 6; i++)
+    // 2) Init Hexapod geometry & kinematics solvers
+    if (!hexapod.init())
     {
-        /* Limb pins : 
-            - Board 1 : 0-5  = first joints
-            - Board 1 : 8-13 = second joints
-            - Board 2 : 0-6  = third joints
-        */
-        limbs[i].addJoint(BOARD1_PIN_BASE + 0 + i, LIMB_LENGTH_PART1, JOINT1_ANGLE, 5.0f, 85.0f);
-        limbs[i].addJoint(BOARD1_PIN_BASE + 8 + i, LIMB_LENGTH_PART2, JOINT2_ANGLE, 5.0f, 85.0f);
-        limbs[i].addJoint(BOARD2_PIN_BASE + 0 + i, LIMB_LENGTH_PART3, JOINT3_ANGLE, 5.0f, 85.0f);
-        limbs[i].init();
+        cout << "[ERROR] - Error while setting up the Hexapod" << endl;
+        return 1;
+    }
+    
+    /* Default pause
+    leg 0 : x156    y200    z115
+    leg 1 : x245    y0      z115
+    leg 2 : x156    y-200   z115
+    leg 0 : x-156   y200    z115
+    leg 1 : x-245   y0      z115
+    leg 2 : x-156   y-200   z115
+    */
+
+    /*
+    double posx = 144 - 10;
+    double posy = 188 - 10;
+
+    Limb* leg0 = hexapod.getLimb(0);
+    if (leg0->setEndTarget(posx, posy, -100))
+    {
+        cout << "A1" << endl;
+        leg0->printAngles();
     }
 
-return 0;
+    if (leg0->setEndTarget(-posx, posy, -100))
+    {
+        cout << "A2" << endl;
+        leg0->printAngles();
+    }
+
+    if (leg0->setEndTarget(posx, -posy, -100))
+    {
+        cout << "A3" << endl;
+        leg0->printAngles();
+    }
+
+    if (leg0->setEndTarget(-posx, -posy, -100))
+    {
+        cout << "A4" << endl;
+        leg0->printAngles();
+    }
+
+
+    cout << "B1" << endl;
+    int on;
+    int off;
+    cout << "B2 " << on << " - " << off << endl;
+*/
+    return 0;
 }
 
 int loop()

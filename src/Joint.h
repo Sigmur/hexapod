@@ -1,6 +1,7 @@
 #ifndef JOINT_H
 #define JOINT_H
 
+//  arbitraty, taken from the PCA9685 example code, can be anything above 100
 #define DEFAULT_JOINT_PIN 300
 
 class Joint
@@ -30,8 +31,9 @@ class Joint
             angle = _home;
         }
 
-        void init();
+        bool init();
         void update();
+        void updateServoPosition();
         // -----
         void setAngle(float _angle, bool move = true);
         void setHome(float angle);
@@ -40,7 +42,6 @@ class Joint
         void setMaxAngle(float angle);
         void setPin(int _pin);
         // -----
-        void moveJoint();
 
     private:
         bool isValidAngle(float _angle);

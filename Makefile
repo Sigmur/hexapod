@@ -1,5 +1,5 @@
 CXX      := -c++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror -I/usr/local/include
+CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror -I/usr/local/include -I/usr/include/eigen3/
 LDLIBS	 := -lwiringPi -lwiringPiDev -lpthread -lm -lwiringPiPca9685
 LDFLAGS  := -L/usr/local/lib -lstdc++ -lm
 BUILD    := ./build
